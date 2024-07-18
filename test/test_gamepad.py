@@ -5,6 +5,7 @@ client = TM2020OpenPlanetClient()
 
 def use_gamepad():
     import time
+    import random
     from vgamepad import VX360Gamepad
 
     gamepad = VX360Gamepad()
@@ -14,7 +15,12 @@ def use_gamepad():
     while time.time() < end_time:
         gamepad.right_trigger_float(value_float=1.0)  # gas
         gamepad.left_trigger_float(value_float=0.0)  # brake
-        gamepad.left_joystick_float(0.0, 0.0)  # left/right
+
+        left_right = random.random() * 2 - 1
+        if left_right == 0:
+            left_right = 0.1
+
+        gamepad.left_joystick_float(left_right, 0.0)  # left/right
         gamepad.update()
         data = client.retrieve_data(sleep_if_empty=0.01)
         time.sleep(0.01)
@@ -34,6 +40,6 @@ assert data1[1] > 0  # distance covered > 0
 # At least one of x, y or z coordinates has changed
 assert data0[2] != data1[2] or data0[3] != data1[3] or data0[4] != data1[4]
 
-assert data1[5] == 0  # left/right not activated
+assert data1[5] != 0  # left/right activated
 assert data1[6] == 1.0  # forward full thrust
 assert data1[7] == 0.0  # brakes not engaged
