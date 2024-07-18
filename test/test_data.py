@@ -1,4 +1,5 @@
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
+import time
 
 
 def reset_game():
@@ -7,6 +8,7 @@ def reset_game():
 
     gamepad = VX360Gamepad()
     gamepad_reset(gamepad)
+    time.sleep(0.1)
 
 
 reset_game()
