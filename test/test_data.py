@@ -4,9 +4,10 @@ import time
 
 def reset_game():
     from vgamepad import VX360Gamepad
-    from tmrl.custom.utils.control_gamepad import gamepad_reset
+    from tmrl.custom.utils.control_gamepad import gamepad_reset, gamepad_close_finish_pop_up_tm20
 
     gamepad = VX360Gamepad()
+    gamepad_close_finish_pop_up_tm20(gamepad)
     gamepad_reset(gamepad)
     time.sleep(0.1)
 
