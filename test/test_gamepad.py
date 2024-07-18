@@ -30,3 +30,5 @@ assert data0[4] != data1[4]  # z coordinate has changed
 assert data1[5] == 0  # left/right not activated
 assert data1[6] == 1.0  # forward full thrust
 assert data1[7] == 0.0  # brakes not engaged
+
+time.sleep(0.5)
