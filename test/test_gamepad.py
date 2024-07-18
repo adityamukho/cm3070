@@ -15,6 +15,8 @@ while time.time() < end_time:
     data1 = client.retrieve_data(sleep_if_empty=0.01)
     time.sleep(0.01)
 
+gamepad.reset()
+
 print(data0)
 print(data1)
 
