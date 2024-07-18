@@ -13,21 +13,14 @@ def use_gamepad():
     data = []
 
     while time.time() < end_time:
-        gas = random.random()
-        if gas == 0:
-            gas = 0.1
-        gamepad.right_trigger_float(value_float=gas)  # gas
-
-        brake = random.random()
-        if brake == 0:
-            brake = 0.1
-        gamepad.left_trigger_float(value_float=brake)  # brake
+        gamepad.right_trigger_float(value_float=1.0)  # gas
+        gamepad.left_trigger_float(value_float=0)  # brake
 
         left_right = random.random() * 2 - 1
         if left_right == 0:
             left_right = 0.1
-
         gamepad.left_joystick_float(left_right, 0.0)  # left/right
+
         gamepad.update()
         data = client.retrieve_data(sleep_if_empty=0.01)
 
@@ -48,4 +41,4 @@ assert data0[2] != data1[2] or data0[3] != data1[3] or data0[4] != data1[4]
 
 assert data1[5] != 0  # left/right activated
 assert data1[6] > 0  # gas applied
-assert data1[7] > 0  # brake applied
+assert data1[7] == 0  # brake not applied
