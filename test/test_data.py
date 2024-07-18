@@ -1,12 +1,17 @@
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
-from tmrl.custom.utils.control_gamepad import gamepad_reset
-from vgamepad import VX360Gamepad
 
 
-gamepad = VX360Gamepad()
+def reset_game():
+    from vgamepad import VX360Gamepad
+    from tmrl.custom.utils.control_gamepad import gamepad_reset
+
+    gamepad = VX360Gamepad()
+    gamepad_reset(gamepad)
+
+
+reset_game()
+
 client = TM2020OpenPlanetClient()
-
-gamepad_reset(gamepad)
 data = client.retrieve_data(sleep_if_empty=0.01)
 print(data)
 
