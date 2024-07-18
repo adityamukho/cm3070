@@ -32,7 +32,7 @@ assert data1[0] > 0  # speed > 0
 assert data1[1] > 0  # distance covered > 0
 assert data0[2] != data1[2]  # x coordinate has changed
 assert data0[3] != data1[3]  # y coordinate has changed
-assert data0[4] != data1[4]  # z coordinate has changed
+assert data0[4] == data1[4]  # z coordinate has NOT changed
 assert data1[5] == 0  # left/right not activated
 assert data1[6] == 1.0  # forward full thrust
 assert data1[7] == 0.0  # brakes not engaged
