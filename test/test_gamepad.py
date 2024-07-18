@@ -10,7 +10,9 @@ end_time = time.time() + 1
 data1 = []
 
 while time.time() < end_time:
-    gamepad.right_trigger_float(value_float=1.0)
+    gamepad.right_trigger_float(value_float=1.0)  # gas
+    gamepad.left_trigger_float(value_float=0.0)  # brake
+    gamepad.left_joystick_float(0.0, 0.0)  # left/right
     gamepad.update()
     data1 = client.retrieve_data(sleep_if_empty=0.01)
     time.sleep(0.01)
