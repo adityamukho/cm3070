@@ -10,6 +10,7 @@ data = []
 while not len(data) or data[8] == 0.0:
     data = client.retrieve_data(sleep_if_empty=0.01)
     gamepad.right_trigger_float(value_float=1.0)
+    gamepad.update()
     time.sleep(0.01)
 
 print('Finished.')
