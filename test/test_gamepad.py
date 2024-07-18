@@ -21,7 +21,6 @@ def use_gamepad():
         brake = random.random()
         if brake == 0:
             brake = 0.1
-
         gamepad.left_trigger_float(value_float=brake)  # brake
 
         left_right = random.random() * 2 - 1
@@ -31,7 +30,6 @@ def use_gamepad():
         gamepad.left_joystick_float(left_right, 0.0)  # left/right
         gamepad.update()
         data = client.retrieve_data(sleep_if_empty=0.01)
-        time.sleep(0.01)
 
     return data
 
