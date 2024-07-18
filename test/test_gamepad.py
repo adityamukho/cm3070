@@ -13,15 +13,16 @@ def use_gamepad():
     data = []
 
     while time.time() < end_time:
-        gas = random.random()
-        if gas == 0:
-            gas = 0.1
-        gamepad.right_trigger_float(value_float=gas)  # gas
+        fwd_back = random.random() * 2 - 1
+        if fwd_back == 0:
+            fwd_back = 0.1
 
-        brake = random.random()
-        if brake == 0:
-            brake = 0.1
-        gamepad.left_trigger_float(value_float=brake)  # brake
+        if fwd_back > 0:
+            gamepad.right_trigger_float(value_float=fwd_back)  # gas
+            gamepad.left_trigger_float(value_float=0)  # brake
+        else:
+            gamepad.left_trigger_float(value_float=fwd_back)  # brake
+            gamepad.right_trigger_float(value_float=0)  # brake
 
         left_right = random.random() * 2 - 1
         if left_right == 0:
@@ -48,5 +49,4 @@ assert data1[1] > 0  # distance covered > 0
 assert data0[2] != data1[2] or data0[3] != data1[3] or data0[4] != data1[4]
 
 assert data1[5] != 0  # left/right activated
-assert data1[6] > 0  # forward thrust
-assert data1[7] > 0  # brakes engaged
+assert data1[6] > 0 or data1[7] > 0  # gas or brake applied
