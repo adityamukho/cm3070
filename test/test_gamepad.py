@@ -14,7 +14,7 @@ def use_gamepad():
 
     while time.time() < end_time:
         gamepad.right_trigger_float(value_float=1.0)  # gas
-        gamepad.left_trigger_float(value_float=0.5)  # brake
+        gamepad.left_trigger_float(value_float=1.0)  # brake
 
         left_right = random.random() - 0.5
         if left_right < 0:
