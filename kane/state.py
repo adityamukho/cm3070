@@ -34,27 +34,29 @@ class State(object):
         self.finished = data["is_finished"]
         if not self.finished:
             position = np.array([data["x"], data["y"], data["z"]])
-            self.positions.append(position)
 
-            if len(self.positions) > 1:
-                try:
-                    displacement = self.positions[-1] - self.positions[-2]
-                    print(displacement)
-                    velocity = displacement / np.linalg.norm(displacement) * data["speed"]
+            if len(self.positions) > 0 and position != self.positions[-1]:
+                self.positions.append(position)
 
-                    self.velocities.append(velocity)
+                if len(self.positions) > 1:
+                    try:
+                        displacement = self.positions[-1] - self.positions[-2]
+                        print(displacement)
+                        velocity = displacement / np.linalg.norm(displacement) * data["speed"]
 
-                    if len(self.velocities) > 1:
-                        try:
-                            acceleration = (self.velocities[-1] - self.velocities[-2])
-                            acceleration /= np.linalg.norm(acceleration)
+                        self.velocities.append(velocity)
 
-                            self.state_action_history.append((acceleration, action))
-                        except ZeroDivisionError | FloatingPointError:
-                            self.positions.pop()
-                            self.velocities.pop()
-                except ZeroDivisionError | FloatingPointError:
-                    self.positions.pop()
+                        if len(self.velocities) > 1:
+                            try:
+                                acceleration = (self.velocities[-1] - self.velocities[-2])
+                                acceleration /= np.linalg.norm(acceleration)
+
+                                self.state_action_history.append((acceleration, action))
+                            except ZeroDivisionError:
+                                self.positions.pop()
+                                self.velocities.pop()
+                    except ZeroDivisionError:
+                        self.positions.pop()
 
     def lookup(self, target_acc):
         target_acc /= np.linalg.norm(target_acc)
