@@ -39,23 +39,21 @@ class State(object):
                 self.positions.append(position)
 
                 if len(self.positions) > 1:
-                    try:
-                        displacement = self.positions[-1] - self.positions[-2]
-                        velocity = displacement / np.linalg.norm(displacement) * data["speed"]
+                    displacement = self.positions[-1] - self.positions[-2]
+                    velocity = displacement / np.linalg.norm(displacement) * data["speed"]
 
-                        self.velocities.append(velocity)
+                    self.velocities.append(velocity)
 
-                        if len(self.velocities) > 1:
-                            try:
-                                acceleration = (self.velocities[-1] - self.velocities[-2])
-                                acceleration /= np.linalg.norm(acceleration)
+                    if len(self.velocities) > 1:
+                        acceleration = (self.velocities[-1] - self.velocities[-2])
+                        anorm = np.linalg.norm(acceleration)
 
-                                self.state_action_history.append((acceleration, action))
-                            except ArithmeticError:
-                                self.positions.pop()
-                                self.velocities.pop()
-                    except ArithmeticError:
-                        self.positions.pop()
+                        if anorm > 0:
+                            acceleration /= np.linalg.norm(acceleration)
+                            self.state_action_history.append((acceleration, action))
+                        else:
+                            self.positions.pop()
+                            self.velocities.pop()
             else:
                 self.positions.append(position)
 
