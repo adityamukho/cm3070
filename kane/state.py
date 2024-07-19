@@ -49,6 +49,7 @@ class State(object):
                 try:
                     velocity = (self.positions[-1] - self.positions[-2]) / t_delta
                     self.velocities.append(velocity)
+                    print(np.linalg.norm(velocity), data["speed"])
 
                     if len(self.velocities) > 1:
                         acceleration = (self.velocities[-1] - self.velocities[-2]) / t_delta
