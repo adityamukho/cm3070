@@ -35,7 +35,7 @@ class State(object):
         if not self.finished:
             position = np.array([data["x"], data["y"], data["z"]])
 
-            if len(self.positions) > 0 and position != self.positions[-1]:
+            if len(self.positions) > 0 and np.not_equal(position, self.positions[-1]).any():
                 self.positions.append(position)
 
                 if len(self.positions) > 1:
