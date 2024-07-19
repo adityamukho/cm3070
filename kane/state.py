@@ -44,14 +44,16 @@ class State(object):
                     self.velocities.append(velocity)
 
                     if len(self.velocities) > 1:
-                        acceleration = (self.velocities[-1] - self.velocities[-2])
-                        acceleration /= np.linalg.norm(acceleration)
-                        print(acceleration, np.linalg.norm(acceleration))
+                        try:
+                            acceleration = (self.velocities[-1] - self.velocities[-2])
+                            acceleration /= np.linalg.norm(acceleration)
 
-                        self.state_action_history.append((acceleration, action))
+                            self.state_action_history.append((acceleration, action))
+                        except ZeroDivisionError:
+                            self.positions.pop()
+                            self.velocities.pop()
                 except ZeroDivisionError:
                     self.positions.pop()
-                    pass
 
     def lookup(self, target_acc):
         target_acc /= np.linalg.norm(target_acc)
