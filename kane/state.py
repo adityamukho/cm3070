@@ -52,11 +52,13 @@ class State(object):
                                 acceleration /= np.linalg.norm(acceleration)
 
                                 self.state_action_history.append((acceleration, action))
-                            except ZeroDivisionError:
+                            except ArithmeticError:
                                 self.positions.pop()
                                 self.velocities.pop()
-                    except ZeroDivisionError:
+                    except ArithmeticError:
                         self.positions.pop()
+            else:
+                self.positions.append(position)
 
     def lookup(self, target_acc):
         target_acc /= np.linalg.norm(target_acc)
