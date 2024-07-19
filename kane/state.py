@@ -40,13 +40,13 @@ class State(object):
                 try:
                     displacement = self.positions[-1] - self.positions[-2]
                     velocity = displacement / np.linalg.norm(displacement) * data["speed"]
-                    print(np.linalg.norm(velocity), data["speed"])
 
                     self.velocities.append(velocity)
 
                     if len(self.velocities) > 1:
                         acceleration = (self.velocities[-1] - self.velocities[-2])
                         acceleration /= np.linalg.norm(acceleration)
+                        print(acceleration)
 
                         self.state_action_history.append((acceleration, action))
                 except ZeroDivisionError:
