@@ -41,7 +41,6 @@ class State(object):
                 if len(self.positions) > 1:
                     try:
                         displacement = self.positions[-1] - self.positions[-2]
-                        print(displacement)
                         velocity = displacement / np.linalg.norm(displacement) * data["speed"]
 
                         self.velocities.append(velocity)
