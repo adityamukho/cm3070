@@ -14,3 +14,5 @@ else:
 
         assert data is not None
         assert type(data) is np.ndarray
+
+        print(len(data))
