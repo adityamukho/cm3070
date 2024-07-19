@@ -2,9 +2,6 @@ import time
 
 import tmrl.config.config_constants as cfg
 from tmrl.custom.utils.control_gamepad import gamepad_reset, gamepad_close_finish_pop_up_tm20
-from tmrl.custom.utils.tools import TM2020OpenPlanetClient
-
-client = TM2020OpenPlanetClient()
 
 
 def reset_game(gamepad=None):
@@ -30,7 +27,7 @@ def update_gamepad(gamepad, action):
     gamepad.update()
 
 
-def get_data_dict():
+def get_data_dict(client):
     data = client.retrieve_data(sleep_if_empty=0.01)
     data_dict = {
         "speed": data[0],

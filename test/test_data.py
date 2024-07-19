@@ -1,6 +1,6 @@
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
 
-from ..kane.functions import reset_game
+from kane.functions import reset_game
 
 reset_game()
 client = TM2020OpenPlanetClient()
