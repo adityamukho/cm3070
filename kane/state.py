@@ -2,7 +2,6 @@ import collections
 import os
 import pickle
 import sys
-import time
 
 import numpy as np
 import tmrl.config.config_constants as cfg
@@ -24,7 +23,6 @@ class State(object):
         self.waypoints = iter(self.waypoints)
         self.target_waypoint = next(self.waypoints)
 
-        self.timestamps = collections.deque(maxlen=2)
         self.positions = collections.deque(maxlen=2)
         self.velocities = collections.deque(maxlen=2)
 
@@ -35,35 +33,23 @@ class State(object):
     def update(self, data, action):
         self.finished = data["is_finished"]
         if not self.finished:
-            now = time.time()
-            self.timestamps.append(now)
-
             position = np.array([data["x"], data["y"], data["z"]])
             self.positions.append(position)
 
             if len(self.positions) > 1:
-                assert len(self.timestamps) > 1
-
-                t_delta = self.timestamps[-1] - self.timestamps[-2]
-
                 try:
-                    velocity = (self.positions[-1] - self.positions[-2]) / t_delta
-                    self.velocities.append(velocity)
+                    displacement = self.positions[-1] - self.positions[-2]
+                    velocity = displacement / np.linalg.norm(displacement) * data["speed"]
                     print(np.linalg.norm(velocity), data["speed"])
 
-                    if len(self.velocities) > 1:
-                        acceleration = (self.velocities[-1] - self.velocities[-2]) / t_delta
-                        anorm = np.linalg.norm(acceleration)
+                    self.velocities.append(velocity)
 
-                        if np.isnan(anorm):
-                            self.timestamps.pop()
-                            self.positions.pop()
-                            self.velocities.pop()
-                        else:
-                            acceleration /= anorm
-                            self.state_action_history.append((acceleration, action))
+                    if len(self.velocities) > 1:
+                        acceleration = (self.velocities[-1] - self.velocities[-2])
+                        acceleration /= np.linalg.norm(acceleration)
+
+                        self.state_action_history.append((acceleration, action))
                 except ZeroDivisionError:
-                    self.timestamps.pop()
                     self.positions.pop()
                     pass
 
