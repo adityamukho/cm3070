@@ -19,7 +19,7 @@ class State(object):
                 self.waypoints = pickle.load(f)
 
         assert self.waypoints is not None
-        assert type(self.waypoints) is list
+        assert type(self.waypoints) is np.ndarray
 
         self.waypoints = iter(self.waypoints)
         self.target_waypoint = next(self.waypoints)

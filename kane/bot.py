@@ -1,7 +1,7 @@
 import numpy as np
 
-from functions import reset_game, init_gamepad, get_data_dict, update_gamepad
-from state import State
+from .functions import reset_game, init_gamepad, get_data_dict, update_gamepad
+from .state import State
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
 
 client = TM2020OpenPlanetClient()
