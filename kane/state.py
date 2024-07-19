@@ -41,18 +41,23 @@ class State(object):
             position = np.array([data["x"], data["y"], data["z"]])
             self.positions.append(position)
 
-            t_delta = None
             if len(self.positions) > 1:
                 assert len(self.timestamps) > 1
 
                 t_delta = self.timestamps[-1] - self.timestamps[-2]
-                velocity = (self.positions[-1] - self.positions[-2]) / t_delta
-                self.velocities.append(velocity)
 
-            if len(self.velocities) > 1:
-                acceleration = (self.velocities[-1] - self.velocities[-2]) / t_delta
-                acceleration /= np.linalg.norm(acceleration)
-                self.state_action_history.append((acceleration, action))
+                try:
+                    velocity = (self.positions[-1] - self.positions[-2]) / t_delta
+                    self.velocities.append(velocity)
+
+                    if len(self.velocities) > 1:
+                        acceleration = (self.velocities[-1] - self.velocities[-2]) / t_delta
+                        acceleration /= np.linalg.norm(acceleration)
+                        self.state_action_history.append((acceleration, action))
+                except ZeroDivisionError:
+                    self.timestamps.pop()
+                    self.positions.pop()
+                    pass
 
     def lookup(self, target_acc):
         target_acc /= np.linalg.norm(target_acc)
