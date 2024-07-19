@@ -45,8 +45,9 @@ class State(object):
 
                     if len(self.velocities) > 1:
                         acceleration = (self.velocities[-1] - self.velocities[-2])
-                        acceleration /= np.linalg.norm(acceleration)
-                        print(acceleration)
+                        anorm = np.linalg.norm(acceleration)
+                        acceleration /= anorm
+                        print(acceleration, anorm)
 
                         self.state_action_history.append((acceleration, action))
                 except ZeroDivisionError:
