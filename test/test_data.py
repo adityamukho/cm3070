@@ -1,21 +1,8 @@
-import time
-
-import tmrl.config.config_constants as cfg
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
 
-
-def reset_game():
-    from vgamepad import VX360Gamepad
-    from tmrl.custom.utils.control_gamepad import gamepad_reset, gamepad_close_finish_pop_up_tm20
-
-    gamepad = VX360Gamepad()
-    gamepad_close_finish_pop_up_tm20(gamepad)
-    gamepad_reset(gamepad)
-    time.sleep(cfg.SLEEP_TIME_AT_RESET)
-
+from kane.functions import reset_game
 
 reset_game()
-
 client = TM2020OpenPlanetClient()
 data = client.retrieve_data(sleep_if_empty=0.01)
 print(data)
