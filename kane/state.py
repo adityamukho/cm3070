@@ -52,8 +52,15 @@ class State(object):
 
                     if len(self.velocities) > 1:
                         acceleration = (self.velocities[-1] - self.velocities[-2]) / t_delta
-                        acceleration /= np.linalg.norm(acceleration)
-                        self.state_action_history.append((acceleration, action))
+                        anorm = np.linalg.norm(acceleration)
+
+                        if np.isnan(anorm):
+                            self.timestamps.pop()
+                            self.positions.pop()
+                            self.velocities.pop()
+                        else:
+                            acceleration /= anorm
+                            self.state_action_history.append((acceleration, action))
                 except ZeroDivisionError:
                     self.timestamps.pop()
                     self.positions.pop()
