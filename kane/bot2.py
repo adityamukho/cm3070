@@ -23,10 +23,23 @@ def find_nearest_waypoint(position, waypoints):
     distances = [euclidean(position, wp) for wp in waypoints]
     return np.argmin(distances)
 
-def calculate_steering(current_position, waypoints, current_waypoint_index, num_waypoints=50, smoothing_factor=0.7):
-    target_waypoints = waypoints[current_waypoint_index:current_waypoint_index + num_waypoints]
-    if len(target_waypoints) < num_waypoints:
-        target_waypoints += waypoints[:num_waypoints - len(target_waypoints)]
+def calculate_steering(current_position, waypoints, current_waypoint_index, current_speed, num_waypoints=50, smoothing_factor=0.7):
+    if current_speed == 0:
+        # If speed is 0, use the original method
+        target_waypoints = waypoints[current_waypoint_index:current_waypoint_index + num_waypoints]
+        if len(target_waypoints) < num_waypoints:
+            target_waypoints += waypoints[:num_waypoints - len(target_waypoints)]
+    else:
+        # Look ahead 1 second based on current speed
+        look_ahead_distance = current_speed  # Assuming speed is in m/s
+        target_waypoints = []
+        total_distance = 0
+        i = current_waypoint_index
+        while total_distance < look_ahead_distance:
+            next_index = (i + 1) % len(waypoints)
+            target_waypoints.append(waypoints[next_index])
+            total_distance += np.linalg.norm(np.array(waypoints[next_index][:2]) - np.array(waypoints[i][:2]))
+            i = next_index
     
     target_direction = np.mean([np.array(wp[:2]) - np.array(current_position[:2]) for wp in target_waypoints], axis=0)
     target_yaw = np.arctan2(target_direction[1], target_direction[0])
@@ -129,7 +142,8 @@ try:
 
         current_time = time.time() - start_time
         current_position = (data["x"], data["y"], data["z"])
-        state_history.append((data["x"], data["y"], data["z"], data["speed"], current_time))
+        current_speed = data["speed"]
+        state_history.append((data["x"], data["y"], data["z"], current_speed, current_time))
 
         current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
 
@@ -144,7 +158,7 @@ try:
                 reversing_time = 0
         else:
             reversing_time = 0
-            steering = calculate_steering(current_position, waypoints, current_waypoint_index)
+            steering = calculate_steering(current_position, waypoints, current_waypoint_index, current_speed)
 
         # Apply less smoothing to steering for harder turns
         steering = 0.8 * steering + 0.2 * previous_steering
