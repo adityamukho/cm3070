@@ -24,31 +24,24 @@ def find_nearest_waypoint(position, waypoints):
     return np.argmin(distances)
 
 def calculate_steering(current_position, target_position, orientation, smoothing_factor=0.5):
-    direction = np.array(target_position) - np.array(current_position)
+    direction = np.array(target_position[:2]) - np.array(current_position[:2])  # Only consider x and y
     target_yaw = np.arctan2(direction[1], direction[0])
-    yaw_diff = target_yaw - orientation[1]  # Use yaw from orientation
+    yaw_diff = target_yaw - orientation
     # Normalize yaw_diff to be between -pi and pi
     yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi
     return np.clip(yaw_diff * smoothing_factor, -1, 1)
 
 def estimate_orientation(state_history):
     if len(state_history) < 2:
-        return np.array([0, 0, 0])
-    prev_pos = np.array(state_history[-2][:3])
-    curr_pos = np.array(state_history[-1][:3])
+        return 0.0
+    prev_pos = np.array(state_history[-2][:2])  # Only consider x and y
+    curr_pos = np.array(state_history[-1][:2])  # Only consider x and y
     direction = curr_pos - prev_pos
-    
-    # Calculate pitch (rotation around x-axis)
-    pitch = np.arctan2(direction[2], np.sqrt(direction[0]**2 + direction[1]**2))
     
     # Calculate yaw (rotation around z-axis)
     yaw = np.arctan2(direction[1], direction[0])
     
-    # We can't directly calculate roll from position data
-    # For simplicity, we'll assume roll is 0
-    roll = 0
-    
-    return np.array([pitch, yaw, roll])
+    return yaw
 
 def is_car_stuck(state_history, threshold=0.1):
     if len(state_history) < 5:
@@ -70,8 +63,8 @@ def adjust_throttle(state_history, action_history, current_position, waypoints, 
     if len(state_history) < 2:
         return 1.0, False, 0.0
 
-    curr_pos = np.array(state_history[-1][:3])
-    prev_pos = np.array(state_history[-2][:3])
+    curr_pos = np.array(state_history[-1][:2])  # Only consider x and y
+    prev_pos = np.array(state_history[-2][:2])  # Only consider x and y
     distance = np.linalg.norm(curr_pos - prev_pos)
     
     current_time = state_history[-1][4]
@@ -81,7 +74,7 @@ def adjust_throttle(state_history, action_history, current_position, waypoints, 
     if distance < standstill_threshold and total_duration > standstill_duration:
         print(f"Stuck detected: distance={distance}, duration={total_duration}")
         target_yaw = calculate_target_orientation(current_position, waypoints, current_waypoint_index)
-        yaw_diff = target_yaw - orientation[1]
+        yaw_diff = target_yaw - orientation
         
         # Normalize yaw_diff to be between -pi and pi
         yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi
