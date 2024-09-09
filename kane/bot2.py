@@ -23,7 +23,7 @@ def find_nearest_waypoint(position, waypoints):
     distances = [euclidean(position, wp) for wp in waypoints]
     return np.argmin(distances)
 
-def calculate_steering(current_position, waypoints, current_waypoint_index, current_speed, num_waypoints=10, smoothing_factor=0.7):
+def calculate_steering(current_position, waypoints, current_waypoint_index, current_speed, num_waypoints=50, smoothing_factor=0.7):
     if current_speed == 0:
         # If speed is 0, use the original method
         target_waypoints = waypoints[current_waypoint_index:current_waypoint_index + num_waypoints]
