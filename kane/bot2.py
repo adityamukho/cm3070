@@ -70,7 +70,7 @@ def calculate_target_orientation(current_position, waypoints, current_waypoint_i
 
 def adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index, orientation, standstill_threshold=0.01, standstill_duration=1.0):
     if len(state_history) < 2:
-        return 1.0, False, 0.0
+        return 1.0, False, 0.0, 0
 
     curr_pos = np.array(state_history[-1][:2])  # Only consider x and y
     prev_pos = np.array(state_history[-2][:2])  # Only consider x and y
@@ -91,12 +91,9 @@ def adjust_throttle(state_history, action_history, current_position, waypoints, 
         # Calculate steering based on yaw difference
         steering = np.clip(yaw_diff / np.pi, -1, 1)
         
-        if abs(yaw_diff) < 0.1:  # If almost aligned, move forward
-            return 0.5, False, steering
-        else:
-            return -0.5, True, steering  # Reverse with steering
+        return -0.5, True, steering, 5  # Reverse with steering for 5 seconds
     
-    return 1.0, False, 0.0
+    return 1.0, False, 0.0, 0
 
 def signal_handler(sig, frame):
     print("\nReceived Ctrl+C. Performing clean shutdown...")
@@ -123,6 +120,7 @@ reversing_counter = 0
 try:
     start_time = time.time()
     previous_steering = 0
+    reversing_time = 0
     while True:
         data = get_data_dict(client)
 
@@ -136,9 +134,16 @@ try:
         current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
 
         orientation = estimate_orientation(state_history)
-        throttle, should_reverse, steering = adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index, orientation)
+        throttle, should_reverse, steering, reverse_duration = adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index, orientation)
         
-        if not should_reverse:
+        if should_reverse:
+            if reversing_time == 0:
+                reversing_time = time.time()
+            elif time.time() - reversing_time >= reverse_duration:
+                should_reverse = False
+                reversing_time = 0
+        else:
+            reversing_time = 0
             steering = calculate_steering(current_position, waypoints, current_waypoint_index)
 
         # Apply less smoothing to steering for harder turns
@@ -147,7 +152,7 @@ try:
 
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
-        print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}, Position: {current_position}")
+        print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}, Position: {current_position}, Reversing: {should_reverse}")
         action = np.array([throttle, brake, steering])
         update_gamepad(gamepad, action)
         print(f"Action applied: {action}")
