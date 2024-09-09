@@ -23,13 +23,13 @@ def find_nearest_waypoint(position, waypoints):
     distances = [euclidean(position, wp) for wp in waypoints]
     return np.argmin(distances)
 
-def calculate_steering(current_position, target_position, orientation, smoothing_factor=0.5):
+def calculate_steering(current_position, target_position, orientation, smoothing_factor=0.7):
     direction = np.array(target_position[:2]) - np.array(current_position[:2])  # Only consider x and y
     target_yaw = np.arctan2(direction[1], direction[0])
     yaw_diff = target_yaw - orientation
     # Normalize yaw_diff to be between -pi and pi
     yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi
-    # Invert the steering direction
+    # Invert the steering direction and increase the smoothing factor
     return np.clip(-yaw_diff * smoothing_factor, -1, 1)
 
 def estimate_orientation(state_history):
@@ -134,8 +134,8 @@ try:
         if not should_reverse:
             steering = calculate_steering(current_position, target_waypoint, orientation)
         
-        # Apply additional smoothing to steering
-        steering = 0.7 * steering + 0.3 * previous_steering
+        # Apply less smoothing to steering for harder turns
+        steering = 0.8 * steering + 0.2 * previous_steering
         previous_steering = steering
 
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
