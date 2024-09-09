@@ -45,16 +45,28 @@ def estimate_orientation(state_history):
     
     return np.array([pitch, yaw, roll])
 
+def is_car_stuck(state_history, threshold=0.1):
+    if len(state_history) < 5:
+        return False
+    recent_positions = [np.array(state[:3]) for state in state_history[-5:]]
+    total_distance = sum(np.linalg.norm(recent_positions[i+1] - recent_positions[i]) for i in range(len(recent_positions)-1))
+    return total_distance < threshold
+
 def adjust_throttle(state_history, action_history):
     if len(state_history) < 2:
-        return 1.0
+        return 1.0, False
+    
+    if is_car_stuck(state_history):
+        return -0.5, True  # Reverse with half throttle
+    
     prev_pos = np.array(state_history[-2][:3])
     curr_pos = np.array(state_history[-1][:3])
     distance = np.linalg.norm(curr_pos - prev_pos)
     avg_throttle = np.mean([action[0] for action in action_history])
+    
     if distance < 0.1 and avg_throttle > 0.8:
-        return 0.5
-    return 1.0
+        return 0.5, False
+    return 1.0, False
 
 client = TM2020OpenPlanetClient()
 gamepad = init_gamepad()
@@ -65,6 +77,7 @@ current_waypoint_index = 0
 
 state_history = deque(maxlen=10)
 action_history = deque(maxlen=10)
+reversing_counter = 0
 
 while True:
     data = get_data_dict(client)
@@ -80,7 +93,16 @@ while True:
 
     orientation = estimate_orientation(state_history)
     steering = calculate_steering(current_position, target_waypoint, orientation)
-    throttle = adjust_throttle(state_history, action_history)
+    throttle, should_reverse = adjust_throttle(state_history, action_history)
+    
+    if should_reverse:
+        reversing_counter = 30  # Reverse for 30 frames
+    
+    if reversing_counter > 0:
+        throttle = -0.5  # Maintain reverse throttle
+        steering = -steering  # Invert steering while reversing
+        reversing_counter -= 1
+    
     brake = 0.0
 
     action = np.array([throttle, brake, steering])
