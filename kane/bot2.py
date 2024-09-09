@@ -28,7 +28,7 @@ client = TM2020OpenPlanetClient()
 gamepad = init_gamepad()
 reset_game(gamepad)
 
-waypoints = load_waypoints('reward.pkl')
+waypoints = load_waypoints()
 current_waypoint_index = 0
 
 while True:
