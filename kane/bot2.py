@@ -4,6 +4,8 @@ from scipy.spatial.distance import euclidean
 import os
 import tmrl.config.config_constants as cfg
 from collections import deque
+import signal
+import sys
 
 from .functions import reset_game, init_gamepad, get_data_dict, update_gamepad
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
@@ -48,7 +50,7 @@ def estimate_orientation(state_history):
 def is_car_stuck(state_history, threshold=0.1):
     if len(state_history) < 5:
         return False
-    recent_positions = [np.array(state[:3]) for state in state_history[-5:]]
+    recent_positions = [np.array(state[0:3]) for state in state_history[-5:]]
     total_distance = sum(np.linalg.norm(recent_positions[i+1] - recent_positions[i]) for i in range(len(recent_positions)-1))
     return total_distance < threshold
 
@@ -68,6 +70,17 @@ def adjust_throttle(state_history, action_history):
         return 0.5, False
     return 1.0, False
 
+def signal_handler(sig, frame):
+    print("\nReceived Ctrl+C. Performing clean shutdown...")
+    # Perform any necessary cleanup here
+    if 'gamepad' in globals():
+        update_gamepad(gamepad, np.array([0.0, 0.0, 0.0]))  # Stop the car
+    if 'client' in globals():
+        client.close()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 client = TM2020OpenPlanetClient()
 gamepad = init_gamepad()
 reset_game(gamepad)
@@ -79,32 +92,38 @@ state_history = deque(maxlen=10)
 action_history = deque(maxlen=10)
 reversing_counter = 0
 
-while True:
-    data = get_data_dict(client)
+try:
+    while True:
+        data = get_data_dict(client)
 
-    if data["is_finished"]:
-        break
+        if data["is_finished"]:
+            break
 
-    current_position = (data["x"], data["y"], data["z"])
-    state_history.append(current_position + (data["speed"],))
+        current_position = (data["x"], data["y"], data["z"])
+        state_history.append(current_position + (data["speed"],))
 
-    current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
-    target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
+        current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
+        target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
 
-    orientation = estimate_orientation(state_history)
-    steering = calculate_steering(current_position, target_waypoint, orientation)
-    throttle, should_reverse = adjust_throttle(state_history, action_history)
-    
-    if should_reverse:
-        reversing_counter = 30  # Reverse for 30 frames
-    
-    if reversing_counter > 0:
-        throttle = -0.5  # Maintain reverse throttle
-        steering = -steering  # Invert steering while reversing
-        reversing_counter -= 1
-    
-    brake = 0.0
+        orientation = estimate_orientation(state_history)
+        steering = calculate_steering(current_position, target_waypoint, orientation)
+        throttle, should_reverse = adjust_throttle(state_history, action_history)
+        
+        if should_reverse:
+            reversing_counter = 30  # Reverse for 30 frames
+        
+        if reversing_counter > 0:
+            throttle = -0.5  # Maintain reverse throttle
+            steering = -steering  # Invert steering while reversing
+            reversing_counter -= 1
+        
+        brake = 0.0
 
-    action = np.array([throttle, brake, steering])
-    update_gamepad(gamepad, action)
-    action_history.append(action)
+        action = np.array([throttle, brake, steering])
+        update_gamepad(gamepad, action)
+        action_history.append(action)
+
+finally:
+    # Perform cleanup
+    update_gamepad(gamepad, np.array([0.0, 0.0, 0.0]))  # Stop the car
+    client.close()
