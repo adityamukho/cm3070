@@ -141,7 +141,7 @@ try:
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
         print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}, Position: {current_position}")
-        action = np.array([throttle, brake, steering])
+        action = np.array([throttle, brake, -steering])
         update_gamepad(gamepad, action)
         print(f"Action applied: {action}")
         action_history.append(action)
