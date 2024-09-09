@@ -55,9 +55,18 @@ def is_car_stuck(state_history, threshold=0.1):
     total_distance = sum(np.linalg.norm(recent_positions[i+1] - recent_positions[i]) for i in range(len(recent_positions)-1))
     return total_distance < threshold
 
-def adjust_throttle(state_history, action_history, standstill_threshold=0.01, standstill_duration=1.0):
+def calculate_target_orientation(current_position, waypoints, current_waypoint_index, num_waypoints=3):
+    target_waypoints = waypoints[current_waypoint_index:current_waypoint_index + num_waypoints]
+    if len(target_waypoints) < num_waypoints:
+        target_waypoints += waypoints[:num_waypoints - len(target_waypoints)]
+    
+    target_direction = np.mean([np.array(wp) - np.array(current_position) for wp in target_waypoints], axis=0)
+    target_yaw = np.arctan2(target_direction[1], target_direction[0])
+    return target_yaw
+
+def adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index, standstill_threshold=0.01, standstill_duration=1.0):
     if len(state_history) < 2:
-        return 1.0, False
+        return 1.0, False, 0.0
     
     curr_pos = np.array(state_history[-1][:3])
     prev_pos = np.array(state_history[-2][:3])
@@ -69,9 +78,10 @@ def adjust_throttle(state_history, action_history, standstill_threshold=0.01, st
     
     if distance < standstill_threshold and total_duration > standstill_duration:
         print(f"Stuck detected: distance={distance}, duration={total_duration}")
-        return -0.5, True  # Reverse with half throttle
+        target_yaw = calculate_target_orientation(current_position, waypoints, current_waypoint_index)
+        return -0.5, True, target_yaw  # Reverse with half throttle and target yaw
     
-    return 1.0, False
+    return 1.0, False, 0.0
 
 def signal_handler(sig, frame):
     print("\nReceived Ctrl+C. Performing clean shutdown...")
@@ -111,8 +121,7 @@ try:
         target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
 
         orientation = estimate_orientation(state_history)
-        steering = calculate_steering(current_position, target_waypoint, orientation)
-        throttle, should_reverse = adjust_throttle(state_history, action_history)
+        throttle, should_reverse, target_yaw = adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index)
         
         if should_reverse:
             print("Reversing initiated")
@@ -120,9 +129,11 @@ try:
         
         if reversing_counter > 0:
             throttle = -0.5  # Maintain reverse throttle
-            steering = -steering  # Invert steering while reversing
+            steering = calculate_steering(current_position, (current_position[0] + np.cos(target_yaw), current_position[1] + np.sin(target_yaw), current_position[2]), orientation)
             reversing_counter -= 1
-            print(f"Reversing: counter={reversing_counter}")
+            print(f"Reversing: counter={reversing_counter}, target_yaw={target_yaw}")
+        else:
+            steering = calculate_steering(current_position, target_waypoint, orientation)
         
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
