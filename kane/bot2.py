@@ -59,16 +59,15 @@ def adjust_throttle(state_history, action_history):
     if len(state_history) < 2:
         return 1.0, False
     
-    if is_car_stuck(state_history):
-        return -0.5, True  # Reverse with half throttle
-    
-    prev_pos = np.array(state_history[-2][:3])
     curr_pos = np.array(state_history[-1][:3])
+    prev_pos = np.array(state_history[-2][:3])
     distance = np.linalg.norm(curr_pos - prev_pos)
-    avg_throttle = np.mean([action[0] for action in action_history])
     
-    if distance < 0.1 and avg_throttle > 0.8:
-        return 0.5, False
+    if distance < 0.01 and len(action_history) > 0 and action_history[-1][0] > 0.5:
+        standstill_duration = state_history[-1][4] - state_history[-2][4]
+        if standstill_duration > 1.0:
+            return -0.5, True  # Reverse with half throttle
+    
     return 1.0, False
 
 def signal_handler(sig, frame):
@@ -120,10 +119,10 @@ try:
             steering = -steering  # Invert steering while reversing
             reversing_counter -= 1
         
-        brake = 0.0
+        brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
         print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}")
-        action = np.array([steering, throttle, brake])
+        action = np.array([throttle, brake, steering])
         update_gamepad(gamepad, action)
         print(f"Action applied: {action}")
         action_history.append(action)
