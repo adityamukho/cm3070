@@ -23,13 +23,21 @@ def find_nearest_waypoint(position, waypoints):
     distances = [euclidean(position, wp) for wp in waypoints]
     return np.argmin(distances)
 
-def calculate_steering(current_position, target_position, orientation, smoothing_factor=0.7):
-    direction = np.array(target_position[:2]) - np.array(current_position[:2])  # Only consider x and y
-    target_yaw = np.arctan2(direction[1], direction[0])
-    yaw_diff = target_yaw - orientation
+def calculate_steering(current_position, waypoints, current_waypoint_index, num_waypoints=50, smoothing_factor=0.7):
+    target_waypoints = waypoints[current_waypoint_index:current_waypoint_index + num_waypoints]
+    if len(target_waypoints) < num_waypoints:
+        target_waypoints += waypoints[:num_waypoints - len(target_waypoints)]
+    
+    target_direction = np.mean([np.array(wp[:2]) - np.array(current_position[:2]) for wp in target_waypoints], axis=0)
+    target_yaw = np.arctan2(target_direction[1], target_direction[0])
+    
+    current_yaw = estimate_orientation(state_history)
+    yaw_diff = target_yaw - current_yaw
+    
     # Normalize yaw_diff to be between -pi and pi
     yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi
-    # Invert the steering direction and increase the smoothing factor
+    
+    # Invert the steering direction and apply smoothing factor
     return np.clip(-yaw_diff * smoothing_factor, -1, 1)
 
 def estimate_orientation(state_history):
@@ -126,14 +134,13 @@ try:
         state_history.append((data["x"], data["y"], data["z"], data["speed"], current_time))
 
         current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
-        target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
 
         orientation = estimate_orientation(state_history)
         throttle, should_reverse, steering = adjust_throttle(state_history, action_history, current_position, waypoints, current_waypoint_index, orientation)
         
         if not should_reverse:
-            steering = calculate_steering(current_position, target_waypoint, orientation)
-        
+            steering = calculate_steering(current_position, waypoints, current_waypoint_index)
+
         # Apply less smoothing to steering for harder turns
         steering = 0.8 * steering + 0.2 * previous_steering
         previous_steering = steering
@@ -141,7 +148,7 @@ try:
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
         print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}, Position: {current_position}")
-        action = np.array([throttle, brake, -steering])
+        action = np.array([throttle, brake, steering])
         update_gamepad(gamepad, action)
         print(f"Action applied: {action}")
         action_history.append(action)
