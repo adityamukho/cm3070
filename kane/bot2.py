@@ -6,6 +6,7 @@ import tmrl.config.config_constants as cfg
 from collections import deque
 import signal
 import sys
+import time
 
 from .functions import reset_game, init_gamepad, get_data_dict, update_gamepad
 from tmrl.custom.utils.tools import TM2020OpenPlanetClient
@@ -93,14 +94,16 @@ action_history = deque(maxlen=10)
 reversing_counter = 0
 
 try:
+    start_time = time.time()
     while True:
         data = get_data_dict(client)
 
         if data["is_finished"]:
             break
 
+        current_time = time.time() - start_time
         current_position = (data["x"], data["y"], data["z"])
-        state_history.append((data["x"], data["y"], data["z"], data["speed"]))
+        state_history.append((data["x"], data["y"], data["z"], data["speed"], current_time))
 
         current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
         target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
@@ -119,8 +122,10 @@ try:
         
         brake = 0.0
 
-        action = np.array([throttle, brake, steering])
+        print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}")
+        action = np.array([steering, throttle, brake])
         update_gamepad(gamepad, action)
+        print(f"Action applied: {action}")
         action_history.append(action)
 
 finally:
