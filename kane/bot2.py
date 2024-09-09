@@ -50,7 +50,7 @@ def estimate_orientation(state_history):
 def is_car_stuck(state_history, threshold=0.1):
     if len(state_history) < 5:
         return False
-    recent_positions = [np.array(state[0:3]) for state in state_history[-5:]]
+    recent_positions = [np.array(state[:3]) for state in list(state_history)[-5:]]
     total_distance = sum(np.linalg.norm(recent_positions[i+1] - recent_positions[i]) for i in range(len(recent_positions)-1))
     return total_distance < threshold
 
@@ -100,7 +100,7 @@ try:
             break
 
         current_position = (data["x"], data["y"], data["z"])
-        state_history.append(current_position + (data["speed"],))
+        state_history.append((data["x"], data["y"], data["z"], data["speed"]))
 
         current_waypoint_index = find_nearest_waypoint(current_position, waypoints)
         target_waypoint = waypoints[min(current_waypoint_index + 1, len(waypoints) - 1)]
