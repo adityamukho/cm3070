@@ -22,17 +22,28 @@ def find_nearest_waypoint(position, waypoints):
 
 def calculate_steering(current_position, target_position, orientation):
     direction = np.array(target_position) - np.array(current_position)
-    target_angle = np.arctan2(direction[1], direction[0])
-    angle_diff = target_angle - orientation
-    return np.clip(angle_diff / np.pi, -1, 1)
+    target_yaw = np.arctan2(direction[1], direction[0])
+    yaw_diff = target_yaw - orientation[1]  # Use yaw from orientation
+    return np.clip(yaw_diff / np.pi, -1, 1)
 
 def estimate_orientation(state_history):
     if len(state_history) < 2:
-        return 0
+        return np.array([0, 0, 0])
     prev_pos = np.array(state_history[-2][:3])
     curr_pos = np.array(state_history[-1][:3])
     direction = curr_pos - prev_pos
-    return np.arctan2(direction[1], direction[0])
+    
+    # Calculate pitch (rotation around x-axis)
+    pitch = np.arctan2(direction[2], np.sqrt(direction[0]**2 + direction[1]**2))
+    
+    # Calculate yaw (rotation around z-axis)
+    yaw = np.arctan2(direction[1], direction[0])
+    
+    # We can't directly calculate roll from position data
+    # For simplicity, we'll assume roll is 0
+    roll = 0
+    
+    return np.array([pitch, yaw, roll])
 
 def adjust_throttle(state_history, action_history):
     if len(state_history) < 2:
