@@ -55,7 +55,7 @@ def is_car_stuck(state_history, threshold=0.1):
     total_distance = sum(np.linalg.norm(recent_positions[i+1] - recent_positions[i]) for i in range(len(recent_positions)-1))
     return total_distance < threshold
 
-def adjust_throttle(state_history, action_history):
+def adjust_throttle(state_history, action_history, standstill_threshold=0.01, standstill_duration=1.0):
     if len(state_history) < 2:
         return 1.0, False
     
@@ -63,10 +63,13 @@ def adjust_throttle(state_history, action_history):
     prev_pos = np.array(state_history[-2][:3])
     distance = np.linalg.norm(curr_pos - prev_pos)
     
-    if distance < 0.01 and len(action_history) > 0 and action_history[-1][0] > 0.5:
-        standstill_duration = state_history[-1][4] - state_history[-2][4]
-        if standstill_duration > 1.0:
-            return -0.5, True  # Reverse with half throttle
+    current_time = state_history[-1][4]
+    start_time = state_history[0][4]
+    total_duration = current_time - start_time
+    
+    if distance < standstill_threshold and total_duration > standstill_duration:
+        print(f"Stuck detected: distance={distance}, duration={total_duration}")
+        return -0.5, True  # Reverse with half throttle
     
     return 1.0, False
 
@@ -112,22 +115,31 @@ try:
         throttle, should_reverse = adjust_throttle(state_history, action_history)
         
         if should_reverse:
+            print("Reversing initiated")
             reversing_counter = 30  # Reverse for 30 frames
         
         if reversing_counter > 0:
             throttle = -0.5  # Maintain reverse throttle
             steering = -steering  # Invert steering while reversing
             reversing_counter -= 1
+            print(f"Reversing: counter={reversing_counter}")
         
         brake = 0.0 if throttle > 0 else 0.2  # Apply slight brake when reversing
 
-        print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}")
+        print(f"Throttle: {throttle}, Steering: {steering}, Brake: {brake}, Position: {current_position}")
         action = np.array([throttle, brake, steering])
         update_gamepad(gamepad, action)
         print(f"Action applied: {action}")
         action_history.append(action)
 
+        # Limit the size of state_history to prevent memory issues
+        if len(state_history) > 100:
+            state_history.popleft()
+        if len(action_history) > 100:
+            action_history.popleft()
+
+except Exception as e:
+    print(f"An error occurred: {e}")
 finally:
-    # Perform cleanup
     update_gamepad(gamepad, np.array([0.0, 0.0, 0.0]))  # Stop the car
     client.close()
